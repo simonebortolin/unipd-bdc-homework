@@ -2,7 +2,6 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import scala.Int;
 import scala.Tuple2;
 
 import java.io.IOException;
@@ -10,7 +9,7 @@ import java.io.Serializable;
 import java.util.*;
 
 
-public class GP021 {
+public class GP021HW1 {
 
     public static void main(String[] args) throws IOException {
 
