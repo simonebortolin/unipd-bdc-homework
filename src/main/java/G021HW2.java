@@ -8,11 +8,14 @@ import java.util.stream.IntStream;
 import org.apache.spark.mllib.linalg.Vector;
 import org.apache.spark.mllib.linalg.Vectors;
 
-public class GP021HW2 {
+public class G021HW2 {
 
-// &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-// Input reading methods
-// &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+    static Container ldc;
+
+    // &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+    // Input reading methods
+    // &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
 
     public static Vector strToVector(String str) {
         String[] tokens = str.split(",");
@@ -29,7 +32,7 @@ public class GP021HW2 {
         }
         ArrayList<Vector> result = new ArrayList<>();
         Files.lines(Paths.get(filename))
-                .map(GP021HW2::strToVector)
+                .map(G021HW2::strToVector)
                 .forEach(result::add);
         return result;
     }
@@ -52,11 +55,20 @@ public class GP021HW2 {
         ArrayList<Vector>  inputPoints = readVectorsSeq(filename);
         ArrayList<Long> weights = new ArrayList<>(Collections.nCopies(inputPoints.size(), 1L));
         List<Vector> solution = seqWeightedOutliers(inputPoints,weights,k,z,0);
+        double objective = computeObjective(inputPoints,solution,z);
 
+        System.out.println("Input size n = "+inputPoints.size());
+        System.out.println("Number of centers k = "+k);
+        System.out.println("Number of outliers z = "+z);
+        System.out.println("Initial guess = "+ldc.getRs().get(0));
+        System.out.println("Final guess = "+ldc.getRs().get(ldc.getRs().size() - 1));
+        System.out.println("Number of guesses = "+ldc.getRs().size());
+        System.out.println("Objective function = "+objective);
     }
-
     public static List<Vector> seqWeightedOutliers(ArrayList<Vector> inputPoints, ArrayList<Long> w, int k, int z, int alpha) {
-        double r = getMin(inputPoints)/2;
+        ldc = new Container(inputPoints);
+        double r = getMinD()/2;
+        ldc.getRs().add(r);
         List<Integer> P = IntStream.range(0,inputPoints.size()).boxed().collect(Collectors.toList());
 
 
@@ -68,7 +80,7 @@ public class GP021HW2 {
                 double max = 0;
                 Integer newCenter = null;
                 for(int x : P) {
-                    Long ballWeight = b(inputPoints, Z, x, (1+2*alpha)*r).stream().map(w::get).reduce(Long::sum).orElse(0L);
+                    Long ballWeight = b( Z, x, (1+2*alpha)*r).stream().map(w::get).reduce(Long::sum).orElse(0L);
                     if(ballWeight > max) {
                         max = ballWeight;
                         newCenter = x;
@@ -76,7 +88,7 @@ public class GP021HW2 {
                 }
                 if(newCenter != null) {
                     S.add(newCenter);
-                    List<Integer> ball = b(inputPoints, Z, newCenter, (3+4*alpha)*r);
+                    List<Integer> ball = b( Z, newCenter, (3+4*alpha)*r);
                     for(int y : ball) {
                         Z.remove((Integer)y);
                         Wz -= w.get(y);
@@ -87,28 +99,79 @@ public class GP021HW2 {
                 return S.stream().map(inputPoints::get).collect(Collectors.toList());
             } else {
                 r *= 2;
+                ldc.getRs().add(r);
             }
         }
         return null;
     }
 
-    public static double getMin(ArrayList<Vector> inputPoints) {
+    public static double computeObjective(ArrayList<Vector> inputPoints, List<Vector> solution, int z) {
+        ArrayList<Double> d = new ArrayList<>(inputPoints.size());
+        for (Vector inputPoint : inputPoints) {
+            double min = Double.MAX_VALUE;
+            for (Vector vector : solution) {
+                min = Math.min(min, Math.sqrt(Vectors.sqdist(inputPoint, vector)));
+            }
+            d.add(min);
+        }
+        d.sort((a,b) -> -Double.compare(a,b));
+        if(z < d.size())
+            return d.get(z);
+
+        return d.get(d.size() -1);
+    }
+    public static double getMinD() {
         double d = Double.MAX_VALUE;
-        int size = inputPoints.size();
+        int size = ldc.getInputPoints().size();
         for(int i =0; i < size - 1; i++) {
             for(int j = i+1; j < size; j++) {
-                d = Math.min(d,d(inputPoints.get(i), inputPoints.get(j)));
+                d = Math.min(d, ldc.d(i, j));
             }
         }
         return d;
     }
 
-    public static double d(Vector x, Vector y) {
-        return Math.sqrt(Vectors.sqdist(x, y));
+    public static List<Integer> b(List<Integer> Z, int x, double r) {
+        return Z.stream().filter(y -> ldc.d(x,y) <= r).collect(Collectors.toList());
     }
 
-    public static List<Integer> b(List<Vector> inputPoints, List<Integer> Z, int x, double r) {
-        return Z.stream().filter(y -> d(inputPoints.get(x), inputPoints.get(y)) <= r).collect(Collectors.toList());
+    public static class Container {
 
+        private final List<Double> rs = new ArrayList<>();
+
+
+        private final List<Vector> inputPoints;
+        private final Double[][] distance;
+
+        public Container(List<Vector> inputPoints) {
+            this.inputPoints = inputPoints;
+            distance = new Double[inputPoints.size() -1][];
+            for(int i =0; i < inputPoints.size() -1; i++) {
+                distance[i] = new Double[inputPoints.size() - i - 1];
+            }
+        }
+
+        public double d(int a, int b) {
+            int i, j;
+            if(a < b) {
+                i = a;
+                j = b-a-1;
+            } else if (a > b) {
+                i = b;
+                j = a-b-1;
+            } else return  0.0;
+            if(distance[i][j] == null)
+                distance[i][j] = Math.sqrt(Vectors.sqdist(inputPoints.get(a), inputPoints.get(b)));
+
+            return distance[i][j];
+        }
+
+        public List<Vector> getInputPoints() {
+            return inputPoints;
+        }
+
+        public List<Double> getRs() {
+            return rs;
+        }
     }
 }

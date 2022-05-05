@@ -9,7 +9,7 @@ import java.io.Serializable;
 import java.util.*;
 
 
-public class GP021HW1 {
+public class G021HW1 {
 
     public static void main(String[] args) throws IOException {
 
