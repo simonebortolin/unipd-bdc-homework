@@ -1,6 +1,9 @@
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -54,7 +57,9 @@ public class G021HW2 {
 
         ArrayList<Vector>  inputPoints = readVectorsSeq(filename);
         ArrayList<Long> weights = new ArrayList<>(Collections.nCopies(inputPoints.size(), 1L));
+        Instant starts = Instant.now();
         List<Vector> solution = seqWeightedOutliers(inputPoints,weights,k,z,0);
+        Instant ends = Instant.now();
         double objective = computeObjective(inputPoints,solution,z);
 
         System.out.println("Input size n = "+inputPoints.size());
@@ -64,6 +69,8 @@ public class G021HW2 {
         System.out.println("Final guess = "+ldc.getRs().get(ldc.getRs().size() - 1));
         System.out.println("Number of guesses = "+ldc.getRs().size());
         System.out.println("Objective function = "+objective);
+        System.out.println("Time of SeqWeightedOutliers = "+Duration.between(starts, ends).toMillis());
+
     }
     public static List<Vector> seqWeightedOutliers(ArrayList<Vector> inputPoints, ArrayList<Long> w, int k, int z, int alpha) {
         ldc = new Container(inputPoints);
