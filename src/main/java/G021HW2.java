@@ -3,7 +3,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -13,7 +12,7 @@ import org.apache.spark.mllib.linalg.Vectors;
 
 public class G021HW2 {
 
-    static Container ldc;
+    static Container container;
 
     // &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
     // Input reading methods
@@ -58,24 +57,24 @@ public class G021HW2 {
         ArrayList<Vector>  inputPoints = readVectorsSeq(filename);
         ArrayList<Long> weights = new ArrayList<>(Collections.nCopies(inputPoints.size(), 1L));
         Instant starts = Instant.now();
-        List<Vector> solution = seqWeightedOutliers(inputPoints,weights,k,z,0);
+        List<Integer> solution = seqWeightedOutliers(inputPoints,weights,k,z,0);
         Instant ends = Instant.now();
         double objective = computeObjective(inputPoints,solution,z);
 
         System.out.println("Input size n = "+inputPoints.size());
         System.out.println("Number of centers k = "+k);
         System.out.println("Number of outliers z = "+z);
-        System.out.println("Initial guess = "+ldc.getRs().get(0));
-        System.out.println("Final guess = "+ldc.getRs().get(ldc.getRs().size() - 1));
-        System.out.println("Number of guesses = "+ldc.getRs().size());
+        System.out.println("Initial guess = "+ container.getRs().get(0));
+        System.out.println("Final guess = "+ container.getRs().get(container.getRs().size() - 1));
+        System.out.println("Number of guesses = "+ container.getRs().size());
         System.out.println("Objective function = "+objective);
         System.out.println("Time of SeqWeightedOutliers = "+Duration.between(starts, ends).toMillis());
 
     }
-    public static List<Vector> seqWeightedOutliers(ArrayList<Vector> inputPoints, ArrayList<Long> w, int k, int z, int alpha) {
-        ldc = new Container(inputPoints);
+    public static List<Integer> seqWeightedOutliers(ArrayList<Vector> inputPoints, ArrayList<Long> w, int k, int z, int alpha) {
+        container = new Container(inputPoints);
         double r = getMinD()/2;
-        ldc.getRs().add(r);
+        container.getRs().add(r);
         List<Integer> P = IntStream.range(0,inputPoints.size()).boxed().collect(Collectors.toList());
 
 
@@ -103,21 +102,21 @@ public class G021HW2 {
                 }
             }
             if(Wz <= z) {
-                return S.stream().map(inputPoints::get).collect(Collectors.toList());
+                return S;
             } else {
                 r *= 2;
-                ldc.getRs().add(r);
+                container.getRs().add(r);
             }
         }
         return null;
     }
 
-    public static double computeObjective(ArrayList<Vector> inputPoints, List<Vector> solution, int z) {
+    public static double computeObjective(ArrayList<Vector> inputPoints, List<Integer> solution, int z) {
         ArrayList<Double> d = new ArrayList<>(inputPoints.size());
-        for (Vector inputPoint : inputPoints) {
+        for (int i =0; i< inputPoints.size(); i++) {
             double min = Double.MAX_VALUE;
-            for (Vector vector : solution) {
-                min = Math.min(min, Math.sqrt(Vectors.sqdist(inputPoint, vector)));
+            for (Integer j : solution) {
+                min = Math.min(min, container.d(i, j));
             }
             d.add(min);
         }
@@ -129,23 +128,21 @@ public class G021HW2 {
     }
     public static double getMinD() {
         double d = Double.MAX_VALUE;
-        int size = ldc.getInputPoints().size();
+        int size = container.getInputPoints().size();
         for(int i =0; i < size - 1; i++) {
             for(int j = i+1; j < size; j++) {
-                d = Math.min(d, ldc.d(i, j));
+                d = Math.min(d, container.d(i, j));
             }
         }
         return d;
     }
 
     public static List<Integer> b(List<Integer> Z, int x, double r) {
-        return Z.stream().filter(y -> ldc.d(x,y) <= r).collect(Collectors.toList());
+        return Z.stream().filter(y -> container.d(x,y) <= r).collect(Collectors.toList());
     }
 
     public static class Container {
-
         private final List<Double> rs = new ArrayList<>();
-
 
         private final List<Vector> inputPoints;
         private final Double[][] distance;
