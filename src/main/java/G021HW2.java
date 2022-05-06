@@ -4,11 +4,15 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.ToLongFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.apache.spark.mllib.linalg.Vector;
 import org.apache.spark.mllib.linalg.Vectors;
+import scala.Tuple2;
 
 public class G021HW2 {
 
@@ -81,25 +85,28 @@ public class G021HW2 {
         while(r > 0.0 && r <= Double.MAX_VALUE) { // to prevent infinite loops
             List<Integer> Z = IntStream.range(0,inputPoints.size()).boxed().collect(Collectors.toList());
             List<Integer> S = new ArrayList<>(k);
-            Long Wz = w.stream().reduce(Long::sum).orElse(0L);
+            long Wz = w.stream().reduce(Long::sum).orElse(0L);
             while(S.size() < k && Wz > 0) {
-                double max = 0;
-                Integer newCenter = null;
-                for(int x : P) {
-                    Long ballWeight = b( Z, x, (1+2*alpha)*r).stream().map(w::get).reduce(Long::sum).orElse(0L);
-                    if(ballWeight > max) {
-                        max = ballWeight;
-                        newCenter = x;
-                    }
-                }
+                double finalR = r;
+                Instant start = Instant.now();
+
+                //Integer newCenter = argmax(P.parallelStream(), x -> b( Z, x, (1+2*alpha)* finalR).map(w::get).reduce(Long::sum).orElse(0L));
+                //Integer newCenter = P.parallelStream().max(Comparator.comparing(x -> b( Z, x, (1+2*alpha)* finalR).map(w::get).reduce(Long::sum).orElse(0L))).orElse(null);
+                //Integer newCenter = P.parallelStream().collect(Collectors.toMap(x-> x, x -> b( Z, x, (1+2*alpha)* finalR).map(w::get).reduce(Long::sum).orElse(0L))).entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse(null);
+                Integer newCenter = P.parallelStream().map(x -> new Tuple2<>(x, b( Z, x, (1+2*alpha)* finalR).map(w::get).reduce(Long::sum).orElse(0L))).max(Comparator.comparing(x -> x._2)).map(x -> x._1).orElse(null);
+
+                Instant middle = Instant.now();
+
                 if(newCenter != null) {
                     S.add(newCenter);
-                    List<Integer> ball = b( Z, newCenter, (3+4*alpha)*r);
-                    for(int y : ball) {
-                        Z.remove((Integer)y);
-                        Wz -= w.get(y);
-                    }
+                    List<Integer> ball = b( Z, newCenter, (3+4*alpha)*r).collect(Collectors.toList());
+                    Z.removeAll(ball);
+                    Wz -= ball.stream().map(w::get).reduce(Long::sum).orElse(0L);
                 }
+
+                Instant end = Instant.now();
+                System.out.println("Time intermedie = "+Duration.between(start, middle).toMillis()+" "+Duration.between(middle, end).toMillis());
+
             }
             if(Wz <= z) {
                 return S;
@@ -109,6 +116,19 @@ public class G021HW2 {
             }
         }
         return null;
+    }
+
+    public static <T> T argmax(Stream<T> stream, ToLongFunction<T> scorer) {
+        AtomicReference<Long> max = new AtomicReference<>();
+        AtomicReference<T> argmax = new AtomicReference<>();
+        stream.forEach(p -> {
+            long score = scorer.applyAsLong(p);
+            if (max.get() ==null || max.get() < score) {
+                max.set(score);
+                argmax.set(p);
+            }
+        });
+        return argmax.get();
     }
 
     public static double computeObjective(ArrayList<Vector> inputPoints, List<Integer> solution, int z) {
@@ -136,8 +156,8 @@ public class G021HW2 {
         return d;
     }
 
-    public static List<Integer> b(List<Integer> Z, int x, double r) {
-        return Z.stream().filter(y -> container.d(x,y) <= r).collect(Collectors.toList());
+    public static Stream<Integer> b(List<Integer> Z, int x, double r) {
+        return Z.stream().filter(y -> container.d(x,y) <= r);
     }
 
     public static class Container {
