@@ -4,6 +4,8 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -81,25 +83,35 @@ public class G021HW2 {
         while(r > 0.0 && r <= Double.MAX_VALUE) { // to prevent infinite loops
             List<Integer> Z = IntStream.range(0,inputPoints.size()).boxed().collect(Collectors.toList());
             List<Integer> S = new ArrayList<>(k);
-            Long Wz = w.stream().reduce(Long::sum).orElse(0L);
+            long Wz = w.stream().reduce(Long::sum).orElse(0L);
             while(S.size() < k && Wz > 0) {
-                double max = 0;
-                Integer newCenter = null;
-                for(int x : P) {
-                    Long ballWeight = b( Z, x, (1+2*alpha)*r).stream().map(w::get).reduce(Long::sum).orElse(0L);
-                    if(ballWeight > max) {
-                        max = ballWeight;
-                        newCenter = x;
+                AtomicReference<Long> max = new AtomicReference<>(0L);
+                AtomicReference<Integer> newCenter = new AtomicReference<>();
+                double finalR1 = r;
+                Instant starts = Instant.now();
+                P.parallelStream().forEach(x -> {
+                    AtomicLong ballWeight = new AtomicLong(0L);
+                    Z.parallelStream().forEach(it -> {if(container.d(x,it) <= (1+2*alpha)* finalR1)
+                        ballWeight.addAndGet(w.get(it));});
+                    /*for(int it : Z) {
+                        if(container.d(x,it) <= (1+2*alpha)*r)
+                            ballWeight.addAndGet(w.get(it));
+                    }*/
+                    if(ballWeight.get() > max.get()) {
+                        max.set(ballWeight.get());
+                        newCenter.set(x);
                     }
+                });
+                Instant middles = Instant.now();
+                if(newCenter.get() != null) {
+                    S.add(newCenter.get());
+                    List<Integer> ball = b( Z, newCenter.get(), (3+4*alpha)*r);
+                    Z.removeAll(ball);
+                    Wz -= ball.stream().map(w::get).reduce(Long::sum).orElse(0L);
                 }
-                if(newCenter != null) {
-                    S.add(newCenter);
-                    List<Integer> ball = b( Z, newCenter, (3+4*alpha)*r);
-                    for(int y : ball) {
-                        Z.remove((Integer)y);
-                        Wz -= w.get(y);
-                    }
-                }
+                Instant ends = Instant.now();
+                System.out.println("Internal time = "+Duration.between(starts, middles).toMillis()+" "+Duration.between(middles,ends).toMillis());
+
             }
             if(Wz <= z) {
                 return S;
