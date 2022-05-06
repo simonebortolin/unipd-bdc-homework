@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.apache.spark.mllib.linalg.Vector;
 import org.apache.spark.mllib.linalg.Vectors;
@@ -81,12 +82,12 @@ public class G021HW2 {
         while(r > 0.0 && r <= Double.MAX_VALUE) { // to prevent infinite loops
             List<Integer> Z = IntStream.range(0,inputPoints.size()).boxed().collect(Collectors.toList());
             List<Integer> S = new ArrayList<>(k);
-            Long Wz = w.stream().reduce(Long::sum).orElse(0L);
+            long Wz = w.stream().reduce(Long::sum).orElse(0L);
             while(S.size() < k && Wz > 0) {
                 double max = 0;
                 Integer newCenter = null;
                 for(int x : P) {
-                    Long ballWeight = b( Z, x, (1+2*alpha)*r).stream().map(w::get).reduce(Long::sum).orElse(0L);
+                    Long ballWeight = b( Z, x, (1+2*alpha)*r).map(w::get).reduce(Long::sum).orElse(0L);
                     if(ballWeight > max) {
                         max = ballWeight;
                         newCenter = x;
@@ -94,11 +95,9 @@ public class G021HW2 {
                 }
                 if(newCenter != null) {
                     S.add(newCenter);
-                    List<Integer> ball = b( Z, newCenter, (3+4*alpha)*r);
-                    for(int y : ball) {
-                        Z.remove((Integer)y);
-                        Wz -= w.get(y);
-                    }
+                    List<Integer> ball = b( Z, newCenter, (3+4*alpha)*r).collect(Collectors.toList())
+                    Z.removeAll(ball);
+                    Wz -= ball.stream().map(w::get).reduce(Long::sum).orElse(0L);
                 }
             }
             if(Wz <= z) {
@@ -136,8 +135,8 @@ public class G021HW2 {
         return d;
     }
 
-    public static List<Integer> b(List<Integer> Z, int x, double r) {
-        return Z.stream().filter(y -> container.d(x,y) <= r).collect(Collectors.toList());
+    public static Stream<Integer> b(List<Integer> Z, int x, double r) {
+        return Z.stream().filter(y -> container.d(x,y) <= r);
     }
 
     public static class Container {
