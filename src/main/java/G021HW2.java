@@ -73,7 +73,7 @@ public class G021HW2 {
     }
     public static List<Integer> seqWeightedOutliers(ArrayList<Vector> inputPoints, ArrayList<Long> w, int k, int z, int alpha) {
         container = new Container(inputPoints);
-        double r = getMinD()/2;
+        double r = getMinD(k+z+1)/2;
         container.getRs().add(r);
         List<Integer> P = IntStream.range(0,inputPoints.size()).boxed().collect(Collectors.toList());
 
@@ -126,9 +126,8 @@ public class G021HW2 {
 
         return d.get(d.size() -1);
     }
-    public static double getMinD() {
+    public static double getMinD(int size) {
         double d = Double.MAX_VALUE;
-        int size = container.getInputPoints().size();
         for(int i =0; i < size - 1; i++) {
             for(int j = i+1; j < size; j++) {
                 d = Math.min(d, container.d(i, j));
@@ -154,7 +153,6 @@ public class G021HW2 {
                 distance[i] = new Double[inputPoints.size() - i - 1];
             }
         }
-
         public double d(int a, int b) {
             int i, j;
             if(a < b) {
@@ -164,6 +162,7 @@ public class G021HW2 {
                 i = b;
                 j = a-b-1;
             } else return  0.0;
+
             if(distance[i][j] == null)
                 distance[i][j] = Math.sqrt(Vectors.sqdist(inputPoints.get(a), inputPoints.get(b)));
 
