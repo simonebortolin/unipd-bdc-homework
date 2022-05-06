@@ -95,7 +95,7 @@ public class G021HW2 {
                 }
                 if(newCenter != null) {
                     S.add(newCenter);
-                    List<Integer> ball = b( Z, newCenter, (3+4*alpha)*r).collect(Collectors.toList())
+                    List<Integer> ball = b( Z, newCenter, (3+4*alpha)*r).collect(Collectors.toList());
                     Z.removeAll(ball);
                     Wz -= ball.stream().map(w::get).reduce(Long::sum).orElse(0L);
                 }
