@@ -11,6 +11,7 @@ import java.util.stream.Stream;
 
 import org.apache.spark.mllib.linalg.Vector;
 import org.apache.spark.mllib.linalg.Vectors;
+import scala.Int;
 
 public class G021HW2 {
 
@@ -89,10 +90,10 @@ public class G021HW2 {
                 double max = 0;
                 Integer newCenter = null;
                 for(int x : P) {
-                    Integer[] ball = cb( Z, x, (1+2*alpha)*r);
+                    List<Integer> ball = cb( Z, x, (1+2*alpha)*r);
                     long ballWeight = 0L;
-                    for(int j = 0, ballSize = ball.length; j< ballSize; j++) {
-                        ballWeight += w[ball[j]];
+                    for(int j = 0, ballSize = ball.size(); j< ballSize; j++) {
+                        ballWeight += w[ball.get(j)];
                     }
                     if(ballWeight > max) {
                         max = ballWeight;
@@ -101,10 +102,10 @@ public class G021HW2 {
                 }
                 if(newCenter != null) {
                     S.add(newCenter);
-                    Integer[] ball = cb( Z, newCenter, (3+4*alpha)*r);
-                    Z.removeAll(Arrays.asList(ball));
-                    for(int j = 0, ballSize = ball.length; j< ballSize; j++) {
-                        Wz -= w[ball[j]];
+                    List<Integer>  ball = cb( Z, newCenter, (3+4*alpha)*r);
+                    Z.removeAll(ball);
+                    for(int j = 0, ballSize = ball.size(); j< ballSize; j++) {
+                        Wz -= w[ball.get(j)];
                     }
                 }
             }
@@ -118,7 +119,7 @@ public class G021HW2 {
         return null;
     }
 
-    private static Integer[] cb(List<Integer> Z, int center, double r) {
+    private static List<Integer> cb(List<Integer> Z, int center, double r) {
         List<Integer> list = new ArrayList<>(Z.size());
         for(int i= 0 , size = Z.size(); i< size;i++) {
             if(container.d(Z.get(i), center) <= r) {
@@ -126,8 +127,10 @@ public class G021HW2 {
             }
         }
 
-        return list.toArray(new Integer[0]);
+        return list;
     }
+
+
 
     public static double computeObjective(ArrayList<Vector> inputPoints, List<Integer> solution, int z) {
         ArrayList<Double> d = new ArrayList<>(inputPoints.size());
