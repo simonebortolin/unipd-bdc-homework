@@ -4,6 +4,7 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -58,7 +59,7 @@ public class G021HW2 {
         ArrayList<Vector>  inputPoints = readVectorsSeq(filename);
         ArrayList<Long> weights = new ArrayList<>(Collections.nCopies(inputPoints.size(), 1L));
         Instant starts = Instant.now();
-        List<Integer> solution = seqWeightedOutliers(inputPoints,weights,k,z,0);
+        List<Integer> solution = seqWeightedOutliers(inputPoints.toArray(new Vector[0]),weights.toArray(new Long[0]),k,z,0);
         Instant ends = Instant.now();
         double objective = computeObjective(inputPoints,solution,z);
 
@@ -72,25 +73,26 @@ public class G021HW2 {
         System.out.println("Time of SeqWeightedOutliers = "+Duration.between(starts, ends).toMillis());
 
     }
-    public static List<Integer> seqWeightedOutliers(ArrayList<Vector> inputPoints, ArrayList<Long> w, int k, int z, int alpha) {
+    public static List<Integer> seqWeightedOutliers(Vector[] inputPoints, Long[] w, int k, int z, int alpha) {
         container = new Container(inputPoints);
         double r = getMinD(k+z+1)/2;
         container.getRs().add(r);
-        List<Integer> P = IntStream.range(0,inputPoints.size()).boxed().collect(Collectors.toList());
+        List<Integer> P = IntStream.range(0,inputPoints.length).boxed().collect(Collectors.toList());
 
 
         while(r > 0.0 && r <= Double.MAX_VALUE) { // to prevent infinite loops
-            List<Integer> Z = IntStream.range(0,inputPoints.size()).boxed().collect(Collectors.toList());
+            List<Integer> Z = new CopyOnWriteArrayList<>(P);
+            //List<Integer> Z = IntStream.range(0,inputPoints.size()).boxed().collect(Collectors.toList());
             List<Integer> S = new ArrayList<>(k);
-            long Wz = w.stream().reduce(Long::sum).orElse(0L);
+            long Wz = Arrays.stream(w).reduce(Long::sum).orElse(0L);
             while(S.size() < k && Wz > 0) {
                 double max = 0;
                 Integer newCenter = null;
                 for(int x : P) {
-                    List<Integer> ball = cb( Z, x, (1+2*alpha)*r);
+                    Integer[] ball = cb( Z, x, (1+2*alpha)*r);
                     long ballWeight = 0L;
-                    for(int j = 0, ballSize = ball.size(); j< ballSize; j++) {
-                        ballWeight += w.get(ball.get(j));
+                    for(int j = 0, ballSize = ball.length; j< ballSize; j++) {
+                        ballWeight += w[ball[j]];
                     }
                     if(ballWeight > max) {
                         max = ballWeight;
@@ -99,10 +101,10 @@ public class G021HW2 {
                 }
                 if(newCenter != null) {
                     S.add(newCenter);
-                    List<Integer> ball = cb( Z, newCenter, (3+4*alpha)*r);
-                    Z.removeAll(ball);
-                    for(int j = 0, ballSize = ball.size(); j< ballSize; j++) {
-                        Wz -= w.get(ball.get(j));
+                    Integer[] ball = cb( Z, newCenter, (3+4*alpha)*r);
+                    Z.removeAll(Arrays.asList(ball));
+                    for(int j = 0, ballSize = ball.length; j< ballSize; j++) {
+                        Wz -= w[ball[j]];
                     }
                 }
             }
@@ -116,14 +118,15 @@ public class G021HW2 {
         return null;
     }
 
-    private static List<Integer> cb(List<Integer> Z, int center, double v) {
+    private static Integer[] cb(List<Integer> Z, int center, double r) {
         List<Integer> list = new ArrayList<>(Z.size());
         for(int i= 0 , size = Z.size(); i< size;i++) {
-            if(container.d(Z.get(i), center) <= v) {
+            if(container.d(Z.get(i), center) <= r) {
                 list.add(Z.get(i));
             }
         }
-        return list;
+
+        return list.toArray(new Integer[0]);
     }
 
     public static double computeObjective(ArrayList<Vector> inputPoints, List<Integer> solution, int z) {
@@ -158,17 +161,19 @@ public class G021HW2 {
     public static class Container {
         private final List<Double> rs = new ArrayList<>();
 
-        private final List<Vector> inputPoints;
+        private final Vector[] inputPoints;
         private final Double[][] distance;
 
-        public Container(List<Vector> inputPoints) {
+        public Container(Vector[] inputPoints) {
             this.inputPoints = inputPoints;
-            distance = new Double[inputPoints.size() -1][];
-            for(int i =0; i < inputPoints.size() -1; i++) {
-                distance[i] = new Double[inputPoints.size() - i - 1];
+            distance = new Double[inputPoints.length -1][];
+            for(int i =0; i < inputPoints.length -1; i++) {
+                distance[i] = new Double[inputPoints.length - i - 1];
             }
         }
         public double d(int a, int b) {
+            return Math.sqrt(Vectors.sqdist(inputPoints[a], inputPoints[b]));
+            /*
             int i, j;
             if(a < b) {
                 i = a;
@@ -179,12 +184,12 @@ public class G021HW2 {
             } else return  0.0;
 
             if(distance[i][j] == null)
-                distance[i][j] = Math.sqrt(Vectors.sqdist(inputPoints.get(a), inputPoints.get(b)));
+                distance[i][j] = Math.sqrt(Vectors.sqdist(inputPoints[a], inputPoints[b]));
 
-            return distance[i][j];
+            return distance[i][j];*/
         }
 
-        public List<Vector> getInputPoints() {
+        public Vector[] getInputPoints() {
             return inputPoints;
         }
 
