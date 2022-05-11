@@ -89,10 +89,11 @@ public class G021HW2 {
                 double max = 0;
                 Integer newCenter = null;
                 for(int x : P) {
-                    Map<Integer, Vector> Bz = cb(Zz,inputPoints.get(x), (1+2*alpha)*r);
-                    long ballWeight = Bz.keySet().stream().map(w::get).reduce(Long::sum).orElse(0L);
-
-                    //Long ballWeight = b(inputPoints, Z, x, (1+2*alpha)*r).stream().map(w::get).reduce(Long::sum).orElse(0L);
+                    Map<Integer, Vector> Bz = cb(Zz,inputPoints.get(x), (1+2*alpha)*r, new TreeMap<>());
+                    long ballWeight = 0L; //Bz.keySet().stream().map(w::get).reduce(Long::sum).orElse(0L);
+                    for(int zz : Bz.keySet()) {
+                        ballWeight += w.get(zz);
+                    }
                     if(ballWeight > max) {
                         max = ballWeight;
                         newCenter = x;
@@ -100,9 +101,14 @@ public class G021HW2 {
                 }
                 if(newCenter != null) {
                     S.add(newCenter);
-                    Map<Integer, Vector> ball = cb( Zz, inputPoints.get(newCenter), (3+4*alpha)*r);
-                    Zz.removeAll(ball.values());
-                    Wz -= ball.keySet().stream().map(w::get).reduce(Long::sum).orElse(0L);
+                    Map<Integer, Vector> ball = cb( Zz, inputPoints.get(newCenter), (3+4*alpha)*r, new TreeMap<>());
+                    Set<Integer> set = ball.keySet();
+                    int removeItem = 0;
+                    for(int i : ball.keySet()) {
+                        Zz.remove(i-removeItem);
+                        Wz -= w.get(i);
+                        removeItem++;
+                    }
                 }
             }
             if(Wz <= z) {
@@ -183,8 +189,7 @@ public class G021HW2 {
     }
 
 
-    private static Map<Integer, Vector> cb(List<Vector> Z, Vector center, double v) {
-        Map<Integer, Vector> Bz = new HashMap<>();
+    private static Map<Integer, Vector> cb(List<Vector> Z, Vector center, double v, Map<Integer, Vector> Bz) {
         for(int i= 0 ; i< Z.size();i++) {
             if(Math.sqrt(Vectors.sqdist(center, Z.get(i))) < v) {
                 Bz.put(i, Z.get(i));
