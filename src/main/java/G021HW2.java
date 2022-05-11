@@ -80,6 +80,8 @@ public class G021HW2 {
 
 
         while(r > 0.0 && r <= Double.MAX_VALUE) { // to prevent infinite loops
+            List<Vector> Zz = new ArrayList<>(inputPoints);
+
             List<Integer> Z = IntStream.range(0,inputPoints.size()).boxed().collect(Collectors.toList());
             List<Integer> S = new ArrayList<>(k);
             long Wz = w.stream().reduce(Long::sum).orElse(0L);
@@ -87,7 +89,10 @@ public class G021HW2 {
                 double max = 0;
                 Integer newCenter = null;
                 for(int x : P) {
-                    Long ballWeight = b( Z, x, (1+2*alpha)*r).map(w::get).reduce(Long::sum).orElse(0L);
+                    Map<Integer, Vector> Bz = cb(Zz,inputPoints.get(x), (1+2*alpha)*r);
+                    long ballWeight = Bz.keySet().stream().map(w::get).reduce(Long::sum).orElse(0L);
+
+                    //Long ballWeight = b(inputPoints, Z, x, (1+2*alpha)*r).stream().map(w::get).reduce(Long::sum).orElse(0L);
                     if(ballWeight > max) {
                         max = ballWeight;
                         newCenter = x;
@@ -95,9 +100,9 @@ public class G021HW2 {
                 }
                 if(newCenter != null) {
                     S.add(newCenter);
-                    List<Integer> ball = b( Z, newCenter, (3+4*alpha)*r).collect(Collectors.toList());
-                    Z.removeAll(ball);
-                    Wz -= ball.stream().map(w::get).reduce(Long::sum).orElse(0L);
+                    Map<Integer, Vector> ball = cb( Zz, inputPoints.get(newCenter), (3+4*alpha)*r);
+                    Zz.removeAll(ball.values());
+                    Wz -= ball.keySet().stream().map(w::get).reduce(Long::sum).orElse(0L);
                 }
             }
             if(Wz <= z) {
@@ -176,4 +181,16 @@ public class G021HW2 {
             return rs;
         }
     }
+
+
+    private static Map<Integer, Vector> cb(List<Vector> Z, Vector center, double v) {
+        Map<Integer, Vector> Bz = new HashMap<>();
+        for(int i= 0 ; i< Z.size();i++) {
+            if(Math.sqrt(Vectors.sqdist(center, Z.get(i))) < v) {
+                Bz.put(i, Z.get(i));
+            }
+        }
+        return Bz;
+    }
+
 }
