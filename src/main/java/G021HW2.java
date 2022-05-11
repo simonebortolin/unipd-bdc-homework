@@ -89,10 +89,10 @@ public class G021HW2 {
                 double max = 0;
                 Integer newCenter = null;
                 for(int x : P) {
-                    Map<Integer, Vector> Bz = cb(Zz,inputPoints.get(x), (1+2*alpha)*r, new TreeMap<>());
-                    long ballWeight = 0L; //Bz.keySet().stream().map(w::get).reduce(Long::sum).orElse(0L);
-                    for(int zz : Bz.keySet()) {
-                        ballWeight += w.get(zz);
+                    List<Integer> Bz = cb(Zz,inputPoints.get(x), (1+2*alpha)*r, new TreeMap<>());
+                    long ballWeight = 0L;
+                    for(int j = 0; j< Bz.size(); j++) {
+                        ballWeight += w.get(Bz.get(j));
                     }
                     if(ballWeight > max) {
                         max = ballWeight;
@@ -101,12 +101,11 @@ public class G021HW2 {
                 }
                 if(newCenter != null) {
                     S.add(newCenter);
-                    Map<Integer, Vector> ball = cb( Zz, inputPoints.get(newCenter), (3+4*alpha)*r, new TreeMap<>());
-                    Set<Integer> set = ball.keySet();
+                    List<Integer> ball = cb( Zz, inputPoints.get(newCenter), (3+4*alpha)*r, new TreeMap<>());
                     int removeItem = 0;
-                    for(int i : ball.keySet()) {
-                        Zz.remove(i-removeItem);
-                        Wz -= w.get(i);
+                    for(int j = 0 ; j< ball.size(); j++){
+                        Zz.remove(ball.get(j)-removeItem);
+                        Wz -= w.get(ball.get(j));
                         removeItem++;
                     }
                 }
@@ -189,13 +188,14 @@ public class G021HW2 {
     }
 
 
-    private static Map<Integer, Vector> cb(List<Vector> Z, Vector center, double v, Map<Integer, Vector> Bz) {
+    private static List<Integer> cb(List<Vector> Z, Vector center, double v, Map<Integer, Vector> Bz) {
+        List<Integer> list = new ArrayList<>();
         for(int i= 0 ; i< Z.size();i++) {
-            if(Math.sqrt(Vectors.sqdist(center, Z.get(i))) < v) {
-                Bz.put(i, Z.get(i));
+            if(Math.sqrt(Vectors.sqdist(center, Z.get(i))) <= v) {
+                list.add(i);
             }
         }
-        return Bz;
+        return list;
     }
 
 }
