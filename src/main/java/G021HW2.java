@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 
 import org.apache.spark.mllib.linalg.Vector;
 import org.apache.spark.mllib.linalg.Vectors;
+import scala.Tuple3;
 
 public class G021HW2 {
 
@@ -86,13 +87,41 @@ public class G021HW2 {
             while(S.size() < k && Wz > 0) {
                 double max = 0;
                 Integer newCenter = null;
+
+                long weigth = Z.stream().map(w::get).reduce(Long::sum).orElse(0L);
+                List<Tuple3<Double, Integer, Integer>> list = new ArrayList<>(Z.size() * P.size());
+
                 for(int x : P) {
-                    Long ballWeight = b( Z, x, (1+2*alpha)*r).map(w::get).reduce(Long::sum).orElse(0L);
+                    for(int zz : Z) {
+                        double d = container.d(x, zz);
+                        if(d <= (1+2*alpha)*r)
+                            list.add(new Tuple3<>(d,x, zz));
+                    }
+                }
+
+                for(int x: P ) {
+                    long ballWeight = list.stream().filter(it -> it._2() == x).map(it -> w.get(it._3())).reduce(Long::sum).orElse(0L);
                     if(ballWeight > max) {
                         max = ballWeight;
                         newCenter = x;
                     }
                 }
+
+                /*for(int x : P) {
+                    long seen=0;
+                    Long ballWeight = 0L;
+                    for(int i = 0; (weigth-seen)+ballWeight>max && i< Z.size(); i++) {
+                        if(container.d(x,Z.get(i)) <= (1+2*alpha)*r) {
+                            ballWeight += w.get(Z.get(i));
+                        }
+                        seen+=w.get(Z.get(i));
+                    }
+                    //Long ballWeight = b( Z, x, (1+2*alpha)*r).map(w::get).reduce(Long::sum).orElse(0L);
+                    if(ballWeight > max) {
+                        max = ballWeight;
+                        newCenter = x;
+                    }
+                }*/
                 if(newCenter != null) {
                     S.add(newCenter);
                     List<Integer> ball = b( Z, newCenter, (3+4*alpha)*r).collect(Collectors.toList());
@@ -136,7 +165,7 @@ public class G021HW2 {
     }
 
     public static Stream<Integer> b(List<Integer> Z, int x, double r) {
-        return Z.stream().filter(y -> container.d(x,y) <= r);
+        return Z.parallelStream().filter(y -> container.d(x,y) <= r);
     }
 
     public static class Container {
