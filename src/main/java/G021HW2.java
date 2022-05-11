@@ -80,8 +80,6 @@ public class G021HW2 {
 
 
         while(r > 0.0 && r <= Double.MAX_VALUE) { // to prevent infinite loops
-            List<Vector> Zz = new ArrayList<>(inputPoints);
-
             List<Integer> Z = IntStream.range(0,inputPoints.size()).boxed().collect(Collectors.toList());
             List<Integer> S = new ArrayList<>(k);
             long Wz = w.stream().reduce(Long::sum).orElse(0L);
@@ -89,10 +87,10 @@ public class G021HW2 {
                 double max = 0;
                 Integer newCenter = null;
                 for(int x : P) {
-                    List<Integer> Bz = cb(Zz,inputPoints.get(x), (1+2*alpha)*r, new TreeMap<>());
+                    List<Integer> ball = cb( Z, x, (1+2*alpha)*r);
                     long ballWeight = 0L;
-                    for(int j = 0; j< Bz.size(); j++) {
-                        ballWeight += w.get(Bz.get(j));
+                    for(int j = 0, ballSize = ball.size(); j< ballSize; j++) {
+                        ballWeight += w.get(ball.get(j));
                     }
                     if(ballWeight > max) {
                         max = ballWeight;
@@ -101,12 +99,10 @@ public class G021HW2 {
                 }
                 if(newCenter != null) {
                     S.add(newCenter);
-                    List<Integer> ball = cb( Zz, inputPoints.get(newCenter), (3+4*alpha)*r, new TreeMap<>());
-                    int removeItem = 0;
-                    for(int j = 0 ; j< ball.size(); j++){
-                        Zz.remove(ball.get(j)-removeItem);
+                    List<Integer> ball = cb( Z, newCenter, (3+4*alpha)*r);
+                    Z.removeAll(ball);
+                    for(int j = 0, ballSize = ball.size(); j< ballSize; j++) {
                         Wz -= w.get(ball.get(j));
-                        removeItem++;
                     }
                 }
             }
@@ -118,6 +114,16 @@ public class G021HW2 {
             }
         }
         return null;
+    }
+
+    private static List<Integer> cb(List<Integer> Z, int center, double v) {
+        List<Integer> list = new ArrayList<>(Z.size());
+        for(int i= 0 , size = Z.size(); i< size;i++) {
+            if(container.d(Z.get(i), center) <= v) {
+                list.add(Z.get(i));
+            }
+        }
+        return list;
     }
 
     public static double computeObjective(ArrayList<Vector> inputPoints, List<Integer> solution, int z) {
@@ -186,16 +192,4 @@ public class G021HW2 {
             return rs;
         }
     }
-
-
-    private static List<Integer> cb(List<Vector> Z, Vector center, double v, Map<Integer, Vector> Bz) {
-        List<Integer> list = new ArrayList<>();
-        for(int i= 0 ; i< Z.size();i++) {
-            if(Math.sqrt(Vectors.sqdist(center, Z.get(i))) <= v) {
-                list.add(i);
-            }
-        }
-        return list;
-    }
-
 }
