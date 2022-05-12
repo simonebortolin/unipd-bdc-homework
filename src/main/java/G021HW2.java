@@ -56,7 +56,7 @@ public class G021HW2 {
         ArrayList<Vector>  inputPoints = readVectorsSeq(filename);
         ArrayList<Long> weights = new ArrayList<>(Collections.nCopies(inputPoints.size(), 1L));
         Instant starts = Instant.now();
-        List<Integer> solution = seqWeightedOutliers(inputPoints,weights,k,z,0);
+        List<Vector> solution = seqWeightedOutliers(inputPoints,weights,k,z,0);
         Instant ends = Instant.now();
         double objective = computeObjective(inputPoints,solution,z);
 
@@ -70,31 +70,31 @@ public class G021HW2 {
         System.out.println("Time of SeqWeightedOutliers = "+Duration.between(starts, ends).toMillis());
 
     }
-    public static List<Integer> seqWeightedOutliers(ArrayList<Vector> inputPoints, ArrayList<Long> w, int k, int z, int alpha) {
-        double r = getMinD(k+z+1, inputPoints)/2;
+    public static List<Vector> seqWeightedOutliers(ArrayList<Vector> inputPoints, ArrayList<Long> w, int k, int z, int alpha) {
+        Vector[] P = inputPoints.toArray(new Vector[0]);
+        double r = getMinD(k+z+1, P)/2;
         rs.add(r);
-        List<Integer> P = IntStream.range(0,inputPoints.size()).boxed().collect(Collectors.toList());
 
 
         while(r > 0.0 && r <= Double.MAX_VALUE) { // to prevent infinite loops
             List<Vector> Z = new ArrayList<>(inputPoints);
             List<Long> Zw = new ArrayList<>(w);
-            List<Integer> S = new ArrayList<>(k);
+            List<Vector> S = new ArrayList<>(k);
             long Wz = w.stream().reduce(Long::sum).orElse(0L);
             while(S.size() < k && Wz > 0) {
                 double max = 0;
-                Integer newCenter = null;
-                for(int x : P) {
-                    long ballWeight = cb(Z, Zw,inputPoints.get(x), (1+2*alpha)*r);
+                Vector newCenter = null;
+                for(int x = 0, size = P.length; x< size; x++) {
+                    long ballWeight = cb(Z.toArray(new Vector[0]), Zw.toArray(new Long[0]),P[x], (1+2*alpha)*r);
 
                     if(ballWeight > max) {
                         max = ballWeight;
-                        newCenter = x;
+                        newCenter = P[x];
                     }
                 }
                 if(newCenter != null) {
                     S.add(newCenter);
-                    long ballWeight = cbr( Z, Zw, inputPoints.get(newCenter), (3+4*alpha)*r);
+                    long ballWeight = cbr( Z, Zw, newCenter, (3+4*alpha)*r);
                     Wz -= ballWeight;
                 }
             }
@@ -108,12 +108,12 @@ public class G021HW2 {
         return null;
     }
 
-    public static double computeObjective(ArrayList<Vector> inputPoints, List<Integer> solution, int z) {
+    public static double computeObjective(ArrayList<Vector> inputPoints, List<Vector> solution, int z) {
         ArrayList<Double> d = new ArrayList<>(inputPoints.size());
         for (int i =0; i< inputPoints.size(); i++) {
             double min = Double.MAX_VALUE;
-            for (Integer j : solution) {
-                min = Math.min(min, Math.sqrt(Vectors.sqdist(inputPoints.get(i), inputPoints.get(j))));
+            for (Vector j : solution) {
+                min = Math.min(min, Math.sqrt(Vectors.sqdist(inputPoints.get(i), j)));
             }
             d.add(min);
         }
@@ -123,22 +123,23 @@ public class G021HW2 {
 
         return d.get(d.size() -1);
     }
-    public static double getMinD(int size, List<Vector> inputPoints) {
+    public static double getMinD(int size, Vector[] inputPoints) {
+
         double d = Double.MAX_VALUE;
         for(int i =0; i < size - 1; i++) {
             for(int j = i+1; j < size; j++) {
-                d = Math.min(d, Math.sqrt(Vectors.sqdist(inputPoints.get(i), inputPoints.get(j))));
+                d = Math.min(d, Math.sqrt(Vectors.sqdist(inputPoints[i], inputPoints[j])));
             }
         }
         return d;
     }
     public static List<Double> rs = new ArrayList<>();
 
-    private static long cb(List<Vector> Z, List<Long> W, Vector center, double v) {
+    private static long cb(Vector[] Z, Long[] W, Vector center, double v) {
         long weigth = 0;
-        for(int i= 0, size = Z.size(); i< size;i++) {
-            if(Math.sqrt(Vectors.sqdist(center, Z.get(i))) <= v) {
-                weigth += W.get(i);
+        for(int i= 0, size = Z.length; i< size;i++) {
+            if(Math.sqrt(Vectors.sqdist(center, Z[i])) <= v) {
+                weigth += W[i];
             }
         }
         return weigth;
