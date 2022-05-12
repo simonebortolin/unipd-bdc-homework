@@ -10,7 +10,6 @@ import java.util.stream.Stream;
 
 import org.apache.spark.mllib.linalg.Vector;
 import org.apache.spark.mllib.linalg.Vectors;
-import scala.Tuple3;
 
 public class G021HW2 {
 
@@ -81,52 +80,34 @@ public class G021HW2 {
 
 
         while(r > 0.0 && r <= Double.MAX_VALUE) { // to prevent infinite loops
+            List<Vector> Zz = new ArrayList<>(inputPoints);
+
             List<Integer> Z = IntStream.range(0,inputPoints.size()).boxed().collect(Collectors.toList());
             List<Integer> S = new ArrayList<>(k);
             long Wz = w.stream().reduce(Long::sum).orElse(0L);
             while(S.size() < k && Wz > 0) {
                 double max = 0;
                 Integer newCenter = null;
-
-                long weigth = Z.stream().map(w::get).reduce(Long::sum).orElse(0L);
-                List<Tuple3<Double, Integer, Integer>> list = new ArrayList<>(Z.size() * P.size());
-
                 for(int x : P) {
-                    for(int zz : Z) {
-                        double d = container.d(x, zz);
-                        if(d <= (1+2*alpha)*r)
-                            list.add(new Tuple3<>(d,x, zz));
+                    List<Integer> Bz = cb(Zz,inputPoints.get(x), (1+2*alpha)*r, new TreeMap<>());
+                    long ballWeight = 0L;
+                    for(int j = 0; j< Bz.size(); j++) {
+                        ballWeight += w.get(Bz.get(j));
                     }
-                }
-
-                for(int x: P ) {
-                    long ballWeight = list.stream().filter(it -> it._2() == x).map(it -> w.get(it._3())).reduce(Long::sum).orElse(0L);
                     if(ballWeight > max) {
                         max = ballWeight;
                         newCenter = x;
                     }
                 }
-
-                /*for(int x : P) {
-                    long seen=0;
-                    Long ballWeight = 0L;
-                    for(int i = 0; (weigth-seen)+ballWeight>max && i< Z.size(); i++) {
-                        if(container.d(x,Z.get(i)) <= (1+2*alpha)*r) {
-                            ballWeight += w.get(Z.get(i));
-                        }
-                        seen+=w.get(Z.get(i));
-                    }
-                    //Long ballWeight = b( Z, x, (1+2*alpha)*r).map(w::get).reduce(Long::sum).orElse(0L);
-                    if(ballWeight > max) {
-                        max = ballWeight;
-                        newCenter = x;
-                    }
-                }*/
                 if(newCenter != null) {
                     S.add(newCenter);
-                    List<Integer> ball = b( Z, newCenter, (3+4*alpha)*r).collect(Collectors.toList());
-                    Z.removeAll(ball);
-                    Wz -= ball.stream().map(w::get).reduce(Long::sum).orElse(0L);
+                    List<Integer> ball = cb( Zz, inputPoints.get(newCenter), (3+4*alpha)*r, new TreeMap<>());
+                    int removeItem = 0;
+                    for(int j = 0 ; j< ball.size(); j++){
+                        Zz.remove(ball.get(j)-removeItem);
+                        Wz -= w.get(ball.get(j));
+                        removeItem++;
+                    }
                 }
             }
             if(Wz <= z) {
@@ -165,7 +146,7 @@ public class G021HW2 {
     }
 
     public static Stream<Integer> b(List<Integer> Z, int x, double r) {
-        return Z.parallelStream().filter(y -> container.d(x,y) <= r);
+        return Z.stream().filter(y -> container.d(x,y) <= r);
     }
 
     public static class Container {
@@ -205,4 +186,16 @@ public class G021HW2 {
             return rs;
         }
     }
+
+
+    private static List<Integer> cb(List<Vector> Z, Vector center, double v, Map<Integer, Vector> Bz) {
+        List<Integer> list = new ArrayList<>();
+        for(int i= 0 ; i< Z.size();i++) {
+            if(Math.sqrt(Vectors.sqdist(center, Z.get(i))) <= v) {
+                list.add(i);
+            }
+        }
+        return list;
+    }
+
 }
