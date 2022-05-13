@@ -79,16 +79,15 @@ public class G021HW2 {
 
 
         while(r > 0.0 && r <= Double.MAX_VALUE) { // to prevent infinite loops
-            List<Vector> Zz = new ArrayList<>(inputPoints);
+            List<Vector> Z = new ArrayList<>(inputPoints);
 
-            List<Integer> Z = IntStream.range(0,inputPoints.size()).boxed().collect(Collectors.toList());
             List<Integer> S = new ArrayList<>(k);
             long Wz = w.stream().reduce(Long::sum).orElse(0L);
             while(S.size() < k && Wz > 0) {
                 double max = 0;
                 Integer newCenter = null;
                 for(int x : P) {
-                    List<Integer> ball = cb(Zz,inputPoints.get(x), (1+2*alpha)*r);
+                    List<Integer> ball = cb(Z,inputPoints.get(x), (1+2*alpha)*r);
                     long ballWeight = 0L;
                     for (Integer integer : ball) {
                         ballWeight += w.get(integer);
@@ -100,10 +99,10 @@ public class G021HW2 {
                 }
                 if(newCenter != null) {
                     S.add(newCenter);
-                    List<Integer> ball = cb( Zz, inputPoints.get(newCenter), (3+4*alpha)*r);
+                    List<Integer> ball = cb( Z, inputPoints.get(newCenter), (3+4*alpha)*r);
                     int removeItem = 0;
                     for (Integer integer : ball) {
-                        Zz.remove(integer - removeItem);
+                        Z.remove(integer - removeItem);
                         Wz -= w.get(integer);
                         removeItem++;
                     }
