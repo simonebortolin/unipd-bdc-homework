@@ -80,10 +80,10 @@ public class G021HW2 {
 
         while(r > 0.0 && r <= Double.MAX_VALUE) { // to prevent infinite loops
             List<Vector> Z = new ArrayList<>(inputPoints);
-
+            List<Long> Zw = new ArrayList<>(w);
             List<Integer> S = new ArrayList<>(k);
-            long Wz = w.stream().reduce(Long::sum).orElse(0L);
-            while(S.size() < k && Wz > 0) {
+            //long Wz = w.stream().reduce(Long::sum).orElse(0L);
+            while(S.size() < k && Zw.size() > 0) {
                 double max = 0;
                 Integer newCenter = null;
                 for(int x : P) {
@@ -103,12 +103,12 @@ public class G021HW2 {
                     int removeItem = 0;
                     for (Integer integer : ball) {
                         Z.remove(integer - removeItem);
-                        Wz -= w.get(integer);
+                        Zw.remove(integer - removeItem);
                         removeItem++;
                     }
                 }
             }
-            if(Wz <= z) {
+            if(Zw.stream().reduce(Long::sum).orElse(0L) <= z) {
                 return S;
             } else {
                 r *= 2;
@@ -152,5 +152,6 @@ public class G021HW2 {
         }
         return list;
     }
+
 
 }
