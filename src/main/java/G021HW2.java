@@ -58,7 +58,7 @@ public class G021HW2 {
         ArrayList<Vector>  inputPoints = readVectorsSeq(filename);
         ArrayList<Long> weights = new ArrayList<>(Collections.nCopies(inputPoints.size(), 1L));
         Instant starts = Instant.now();
-        List<Integer> solution = seqWeightedOutliers(inputPoints,weights,k,z,0);
+        List<Vector> solution = seqWeightedOutliers(inputPoints,weights,k,z,0);
         Instant ends = Instant.now();
         double objective = computeObjective(inputPoints,solution,z);
 
@@ -72,39 +72,36 @@ public class G021HW2 {
         System.out.println("Time of SeqWeightedOutliers = "+Duration.between(starts, ends).toMillis());
 
     }
-    public static List<Integer> seqWeightedOutliers(ArrayList<Vector> inputPoints, ArrayList<Long> w, int k, int z, int alpha) {
+    public static List<Vector> seqWeightedOutliers(ArrayList<Vector> inputPoints, ArrayList<Long> w, int k, int z, int alpha) {
         double r = getMinD(k+z+1, inputPoints)/2;
         rs.add(r);
-        List<Integer> P = IntStream.range(0,inputPoints.size()).boxed().collect(Collectors.toList());
+        //Vector[] P = inputPoints.toArray(new Vector[0]);
 
 
-        while(r > 0.0 && r <= Double.MAX_VALUE) { // to prevent infinite loops
+        while(true) { // to prevent infinite loops
             List<Vector> Z = new ArrayList<>(inputPoints);
             List<Long> Zw = new ArrayList<>(w);
-            List<Integer> S = new ArrayList<>(k);
-            //long Wz = w.stream().reduce(Long::sum).orElse(0L);
-            while(S.size() < k && Zw.size() > 0) {
+            List<Vector> S = new ArrayList<>(k);
+
+            while(S.size() < k && Zw.stream().reduce(Long::sum).orElse(0L) > 0) {
                 double max = 0;
-                Integer newCenter = null;
-                for(int x : P) {
-                    List<Integer> ball = cb(Z,inputPoints.get(x), (1+2*alpha)*r);
-                    long ballWeight = 0L;
-                    for (Integer integer : ball) {
-                        ballWeight += w.get(integer);
-                    }
-                    if(ballWeight > max) {
+                Vector newCenter = null;
+                for (Vector x : inputPoints) {
+                    List<Integer> ball = cb(Z, x, (1 + 2 * alpha) * r);
+                    long ballWeight = ball.stream().map(w::get).reduce(Long::sum).orElse(0L);
+                    if (ballWeight > max) {
                         max = ballWeight;
                         newCenter = x;
                     }
                 }
                 if(newCenter != null) {
                     S.add(newCenter);
-                    List<Integer> ball = cb( Z, inputPoints.get(newCenter), (3+4*alpha)*r);
-                    int removeItem = 0;
-                    for (Integer integer : ball) {
-                        Z.remove(integer - removeItem);
-                        Zw.remove(integer - removeItem);
-                        removeItem++;
+                    List<Integer> ball = cb( Z, newCenter, (3+4*alpha)*r);
+                    ball.sort((a,b) -> a-b);
+                    for (int i  = ball.size() -1 ; i >= 0; i--) {
+                        int index = ball.get(i);
+                        Z.remove(index);
+                        Zw.remove(index);
                     }
                 }
             }
@@ -115,15 +112,14 @@ public class G021HW2 {
                 rs.add(r);
             }
         }
-        return null;
     }
 
-    public static double computeObjective(ArrayList<Vector> inputPoints, List<Integer> solution, int z) {
+    public static double computeObjective(ArrayList<Vector> inputPoints, List<Vector> solution, int z) {
         ArrayList<Double> d = new ArrayList<>(inputPoints.size());
-        for (int i =0; i< inputPoints.size(); i++) {
+        for (int i =0, size = inputPoints.size(); i< size; i++) {
             double min = Double.MAX_VALUE;
-            for (Integer j : solution) {
-                min = Math.min(min, Math.sqrt(Vectors.sqdist(inputPoints.get(i), inputPoints.get(j))));
+            for (Vector j : solution) {
+                min = Math.min(min, Math.sqrt(Vectors.sqdist(inputPoints.get(i), j)));
             }
             d.add(min);
         }
