@@ -88,8 +88,15 @@ public class G021HW2 {
             while(S.size() < k && Wz > 0) {
                 double max = 0;
                 Integer newCenter = null;
+                Instant i0 = null;
+                Instant i1 = null;
+                Instant i2 = null;
+                int  jj = 0;
                 for(int x : P) {
-                    Map<Integer, Vector> Bz = cb(Zz,inputPoints.get(x), (1+2*alpha)*r, new TreeMap<>());
+                    if(jj ==0) i0 = Instant.now();
+                    Map<Integer, Vector> Bz = cb(Zz,inputPoints.get(x), (1+2*alpha)*r, new HashMap<>());
+                    if(jj ==0) i1 = Instant.now();
+
                     long ballWeight = 0L; //Bz.keySet().stream().map(w::get).reduce(Long::sum).orElse(0L);
                     for(int zz : Bz.keySet()) {
                         ballWeight += w.get(zz);
@@ -98,7 +105,11 @@ public class G021HW2 {
                         max = ballWeight;
                         newCenter = x;
                     }
+                    if(jj ==0) i2 = Instant.now();
+                    jj++;
                 }
+               //Instant  i1 = Instant.now();
+
                 if(newCenter != null) {
                     S.add(newCenter);
                     Map<Integer, Vector> ball = cb( Zz, inputPoints.get(newCenter), (3+4*alpha)*r, new TreeMap<>());
@@ -110,6 +121,8 @@ public class G021HW2 {
                         removeItem++;
                     }
                 }
+               //Instant  i2 = Instant.now();
+               System.out.println("Time intermedie = "+Duration.between(i0, i1).toNanos()+" "+Duration.between(i1, i2).toNanos());
             }
             if(Wz <= z) {
                 return S;
@@ -164,7 +177,9 @@ public class G021HW2 {
             }
         }
         public double d(int a, int b) {
-            int i, j;
+            return Math.sqrt(Vectors.sqdist(inputPoints.get(a), inputPoints.get(b)));
+
+           /* int i, j;
             if(a < b) {
                 i = a;
                 j = b-a-1;
@@ -177,7 +192,7 @@ public class G021HW2 {
                 distance[i][j] = Math.sqrt(Vectors.sqdist(inputPoints.get(a), inputPoints.get(b)));
 
             return distance[i][j];
-        }
+        */}
 
         public List<Vector> getInputPoints() {
             return inputPoints;
