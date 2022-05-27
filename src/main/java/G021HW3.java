@@ -121,7 +121,12 @@ public class G021HW3
                 c_w.add(i,entry);
             }
             return c_w.iterator();
-        }); // END OF ROUND 1
+        });
+        // END OF ROUND 1
+
+        end = System.currentTimeMillis();
+
+        System.out.println("Time Round 1: " + (end-start) + "ms");
 
         //------------- ROUND 2 ---------------------------
 
@@ -235,6 +240,7 @@ public class G021HW3
     }
     public static List<Vector> seqWeightedOutliers(ArrayList<Vector> inputPoints, ArrayList<Long> w, int k, int z, int alpha) {
         double r = getMinD(k + z + 1, inputPoints) / 2;
+        System.out.println("Initial guess "+r);
         rs.add(r);
         //Vector[] P = inputPoints.toArray(new Vector[0]);
 
@@ -266,13 +272,17 @@ public class G021HW3
                     }
                 }
             }
+
             if (Zw.stream().reduce(Long::sum).orElse(0L) <= z) {
                 return S;
             } else {
                 r *= 2;
                 rs.add(r);
             }
+            System.out.println("Final guess "+r);
+            System.out.println("Number of guess "+rs.size());
         }
+
     }
 
 
