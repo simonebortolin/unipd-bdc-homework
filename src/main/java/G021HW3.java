@@ -127,12 +127,20 @@ public class G021HW3
 
         ArrayList<Tuple2<Vector, Long>> elems = new ArrayList<>((k+z)*L);
         elems.addAll(coreset.collect());
+
+        ArrayList<Vector> v=new ArrayList<>();
+        ArrayList<Long> w=new ArrayList<>();
+        for (Tuple2<Vector,Long> p:elems) {
+            v.add(p._1());
+            w.add(p._2());
+        }
         //
         // ****** ADD YOUR CODE
         // ****** Compute the final solution (run SeqWeightedOutliers with alpha=2)
         // ****** Measure and print times taken by Round 1 and Round 2, separately
         // ****** Return the final solution
         //
+        return (ArrayList<Vector>) seqWeightedOutliers(v,w,k,z,2);
     }
 
 // &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
@@ -274,6 +282,20 @@ public class G021HW3
 
     public static double computeObjective (JavaRDD<Vector> points, ArrayList<Vector> centers, int z)
     {
+       List<Vector> l = points.collect();
+       ArrayList<Double> d=new ArrayList<>(l.size());
+       for (int i = 0, size = l.size(); i < size; i++) {
+           double min = Double.MAX_VALUE;
+           for (Vector j : centers) {
+               min = Math.min(min, Math.sqrt(Vectors.sqdist(l.get(i), j)));
+           }
+           d.add(min);
+       }
+       d.sort((a, b) -> -Double.compare(a, b));
+       if (z < d.size())
+           return d.get(z);
+
+       return d.get(d.size() - 1);
 
         //
         // ****** ADD THE CODE FOR computeObjective
