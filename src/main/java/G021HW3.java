@@ -106,7 +106,11 @@ public class G021HW3
     public static ArrayList<Vector> MR_kCenterOutliers (JavaRDD<Vector> points, int k, int z, int L)
     {
 
+        long start, end;
+
         //------------- ROUND 1 ---------------------------
+
+        start = System.currentTimeMillis();
 
         JavaRDD<Tuple2<Vector,Long>> coreset = points.mapPartitions(x ->
         {
@@ -130,6 +134,8 @@ public class G021HW3
 
         //------------- ROUND 2 ---------------------------
 
+        start = System.currentTimeMillis();
+
         ArrayList<Tuple2<Vector, Long>> elems = new ArrayList<>((k+z)*L);
         elems.addAll(coreset.collect());
 
@@ -139,12 +145,11 @@ public class G021HW3
             v.add(p._1());
             w.add(p._2());
         }
-        //
-        // ****** ADD YOUR CODE
-        // ****** Compute the final solution (run SeqWeightedOutliers with alpha=2)
-        // ****** Measure and print times taken by Round 1 and Round 2, separately
-        // ****** Return the final solution
-        //
+
+        end = System.currentTimeMillis();
+
+        System.out.println("Time Round 2: " + (end-start) + "ms");
+
         return (ArrayList<Vector>) seqWeightedOutliers(v,w,k,z,2);
     }
 
@@ -293,7 +298,7 @@ public class G021HW3
     public static double computeObjective (JavaRDD<Vector> points, ArrayList<Vector> centers, int z)
     {
        List<Vector> l = points.collect();
-       ArrayList<Double> d=new ArrayList<>(l.size());
+       ArrayList<Double> d = new ArrayList<>(l.size());
        for (int i = 0, size = l.size(); i < size; i++) {
            double min = Double.MAX_VALUE;
            for (Vector j : centers) {
