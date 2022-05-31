@@ -128,17 +128,19 @@ public class G021HW3
         });
         // END OF ROUND 1
 
+
+
+        //------------- ROUND 2 ---------------------------
+
+
+
+        ArrayList<Tuple2<Vector, Long>> elems = new ArrayList<>((k+z)*L);
+        elems.addAll(coreset.collect());
         end = System.currentTimeMillis();
 
         System.out.println("Time Round 1: " + (end-start) + "ms");
 
-        //------------- ROUND 2 ---------------------------
-
         start = System.currentTimeMillis();
-
-        ArrayList<Tuple2<Vector, Long>> elems = new ArrayList<>((k+z)*L);
-        elems.addAll(coreset.collect());
-
         ArrayList<Vector> v=new ArrayList<>();
         ArrayList<Long> w=new ArrayList<>();
         for (Tuple2<Vector,Long> p:elems) {
@@ -299,18 +301,20 @@ public class G021HW3
     {
        List<Vector> l = points.collect();
        ArrayList<Double> d = new ArrayList<>(l.size());
-       for (int i = 0, size = l.size(); i < size; i++) {
+
+
+      for (int i = 0, size = l.size(); i < size; i++) {
            double min = Double.MAX_VALUE;
            for (Vector j : centers) {
                min = Math.min(min, Math.sqrt(Vectors.sqdist(l.get(i), j)));
            }
            d.add(min);
+
        }
-       d.sort((a, b) -> -Double.compare(a, b));
+      d.sort((a, b) -> -Double.compare(a, b));
        if (z < d.size())
            return d.get(z);
-
-       return d.get(d.size() - 1);
+        return d.get(d.size() - 1);
 
         //
         // ****** ADD THE CODE FOR computeObjective
