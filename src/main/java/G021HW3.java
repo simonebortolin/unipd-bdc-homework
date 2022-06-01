@@ -9,8 +9,10 @@ import org.apache.spark.mllib.linalg.Vector;
 import org.apache.spark.mllib.linalg.Vectors;
 import scala.Tuple2;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 public class G021HW3
@@ -341,6 +343,14 @@ public class G021HW3
         // ****** ADD THE CODE FOR computeObjective
         //
 
+
+    }
+
+    public interface SerializableComparator<T> extends Comparator<T>, Serializable {
+
+        static <T> G021HW1.SerializableComparator<T> serialize(G021HW1.SerializableComparator<T> comparator) {
+            return comparator;
+        }
 
     }
 
