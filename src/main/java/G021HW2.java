@@ -5,6 +5,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 
+import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.mllib.linalg.Vector;
 import org.apache.spark.mllib.linalg.Vectors;
 

@@ -63,9 +63,9 @@ public class G021HW3
 
         // ---- Solve the problem
         ArrayList<Vector> solution = MR_kCenterOutliers(inputPoints, k, z, L);
-        end = System.currentTimeMillis();
+        long endR2 = System.currentTimeMillis();
 
-        System.out.println("Time Round 2: " + (end-start) + "ms");
+        System.out.println("Time Round 2: " + (endR2-startR2) + "ms");
         System.out.println("Initial guess "+rs.get(0));
         System.out.println("Final guess "+rs.get(rs.size()-1));
         System.out.println("Number of guess "+rs.size());
@@ -303,7 +303,7 @@ public class G021HW3
 
     public static double computeObjective (JavaRDD<Vector> points, ArrayList<Vector> centers, int z)
     {
-       List<Vector> l = points.collect();
+       /*List<Vector> l = points.collect();
        ArrayList<Double> d = new ArrayList<>(l.size());
 
 
@@ -315,10 +315,27 @@ public class G021HW3
            d.add(min);
 
        }
-      d.sort((a, b) -> -Double.compare(a, b));
-       if (z < d.size())
-           return d.get(z);
-        return d.get(d.size() - 1);
+      d.sort((a, b) -> -Double.compare(a, b));*/
+
+        JavaRDD<Double> d=points.map( point-> {
+            double min=Double.MAX_VALUE;
+            for(Vector c:centers)
+                min = Math.min(min, Math.sqrt(Vectors.sqdist(point,c)));
+            return min;
+        });
+        List<Double> d1 = d.takeOrdered(z+1, new SerializableComparator<Double>() {
+
+            @Override
+            public int compare(Double o1, Double o2) {
+                return -Double.compare(o1, o2);
+            }
+        });
+        if (z < d1.size())
+            return d1.get(z);
+        return d1.get(d1.size() -1 );
+
+
+
 
         //
         // ****** ADD THE CODE FOR computeObjective
