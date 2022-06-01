@@ -17,6 +17,7 @@ public class G021HW3
 {
 
     static List<Double> rs = new ArrayList<>();
+    static Long startR2;
 // &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 // &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 // MAIN PROGRAM
@@ -62,7 +63,12 @@ public class G021HW3
 
         // ---- Solve the problem
         ArrayList<Vector> solution = MR_kCenterOutliers(inputPoints, k, z, L);
+        end = System.currentTimeMillis();
 
+        System.out.println("Time Round 2: " + (end-start) + "ms");
+        System.out.println("Initial guess "+rs.get(0));
+        System.out.println("Final guess "+rs.get(rs.size()-1));
+        System.out.println("Number of guess "+rs.size());
         // ---- Compute the value of the objective function
         start = System.currentTimeMillis();
         double objective = computeObjective(inputPoints, solution, z);
@@ -140,7 +146,7 @@ public class G021HW3
 
         System.out.println("Time Round 1: " + (end-start) + "ms");
 
-        start = System.currentTimeMillis();
+        startR2 = System.currentTimeMillis();
         ArrayList<Vector> v=new ArrayList<>();
         ArrayList<Long> w=new ArrayList<>();
         for (Tuple2<Vector,Long> p:elems) {
@@ -148,11 +154,10 @@ public class G021HW3
             w.add(p._2());
         }
 
-        end = System.currentTimeMillis();
 
-        System.out.println("Time Round 2: " + (end-start) + "ms");
 
         return (ArrayList<Vector>) seqWeightedOutliers(v,w,k,z,2);
+
     }
 
 // &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
@@ -247,7 +252,7 @@ public class G021HW3
     }
     public static List<Vector> seqWeightedOutliers(ArrayList<Vector> inputPoints, ArrayList<Long> w, int k, int z, int alpha) {
         double r = getMinD(k + z + 1, inputPoints) / 2;
-        System.out.println("Initial guess "+r);
+
         rs.add(r);
         //Vector[] P = inputPoints.toArray(new Vector[0]);
 
@@ -286,8 +291,7 @@ public class G021HW3
                 r *= 2;
                 rs.add(r);
             }
-            System.out.println("Final guess "+r);
-            System.out.println("Number of guess "+rs.size());
+
         }
 
     }
