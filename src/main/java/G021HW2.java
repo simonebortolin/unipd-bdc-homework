@@ -87,7 +87,7 @@ public class G021HW2 {
                 Vector newCenter = null;
                 for (Vector x : inputPoints) {
                     List<Integer> ball = cb(Z, x, (1 + 2 * alpha) * r);
-                    long ballWeight = ball.stream().map(w::get).reduce(Long::sum).orElse(0L);
+                    long ballWeight = ball.stream().map(Zw::get).reduce(Long::sum).orElse(0L);
                     if (ballWeight > max) {
                         max = ballWeight;
                         newCenter = x;

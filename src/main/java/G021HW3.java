@@ -237,7 +237,7 @@ public class G021HW3
     private static List<Integer> cb(List<Vector> Z, Vector center, double v) {
         List<Integer> list = new ArrayList<>();
         for (int i = 0; i < Z.size(); i++) {
-            if (Math.sqrt(Vectors.sqdist(center, Z.get(i))) <= v) {
+            if (euclidean(center, Z.get(i)) <= v) {
                 list.add(i);
             }
         }
@@ -247,14 +247,13 @@ public class G021HW3
         double d = Double.MAX_VALUE;
         for (int i = 0; i < size - 1; i++) {
             for (int j = i + 1; j < size; j++) {
-                d = Math.min(d, Math.sqrt(Vectors.sqdist(inputPoints.get(i), inputPoints.get(j))));
+                d = Math.min(d, euclidean(inputPoints.get(i), inputPoints.get(j)));
             }
         }
         return d;
     }
     public static List<Vector> seqWeightedOutliers(ArrayList<Vector> inputPoints, ArrayList<Long> w, int k, int z, int alpha) {
         double r = getMinD(k + z + 1, inputPoints) / 2;
-
         rs.add(r);
         //Vector[] P = inputPoints.toArray(new Vector[0]);
 
@@ -269,7 +268,7 @@ public class G021HW3
                 Vector newCenter = null;
                 for (Vector x : inputPoints) {
                     List<Integer> ball = cb(Z, x, (1 + 2 * alpha) * r);
-                    long ballWeight = ball.stream().map(w::get).reduce(Long::sum).orElse(0L);
+                    long ballWeight = ball.stream().map(Zw::get).reduce(Long::sum).orElse(0L);
                     if (ballWeight > max) {
                         max = ballWeight;
                         newCenter = x;
