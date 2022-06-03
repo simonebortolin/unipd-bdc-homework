@@ -1,10 +1,8 @@
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaDoubleRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.mllib.linalg.BLAS;
 import org.apache.spark.mllib.linalg.Vector;
 import org.apache.spark.mllib.linalg.Vectors;
 import scala.Tuple2;
@@ -304,53 +302,19 @@ public class G021HW3
 
     public static double computeObjective (JavaRDD<Vector> points, ArrayList<Vector> centers, int z)
     {
-       /*List<Vector> l = points.collect();
-       ArrayList<Double> d = new ArrayList<>(l.size());
-
-
-      for (int i = 0, size = l.size(); i < size; i++) {
-           double min = Double.MAX_VALUE;
-           for (Vector j : centers) {
-               min = Math.min(min, Math.sqrt(Vectors.sqdist(l.get(i), j)));
-           }
-           d.add(min);
-
-       }
-      d.sort((a, b) -> -Double.compare(a, b));*/
-
         JavaRDD<Double> d=points.map( point-> {
             double min=Double.MAX_VALUE;
             for(Vector c:centers)
-                min = Math.min(min, Math.sqrt(Vectors.sqdist(point,c)));
+                min = Math.min(min, euclidean(point,c));
             return min;
         });
-        List<Double> d1 = d.takeOrdered(z+1, new SerializableComparator<Double>() {
-
-            @Override
-            public int compare(Double o1, Double o2) {
-                return -Double.compare(o1, o2);
-            }
-        });
+        List<Double> d1 = d.takeOrdered(z+1, (SerializableComparator<Double>) (o1, o2) -> -Double.compare(o1, o2));
         if (z < d1.size())
             return d1.get(z);
         return d1.get(d1.size() -1 );
-
-
-
-
-        //
-        // ****** ADD THE CODE FOR computeObjective
-        //
-
-
     }
 
     public interface SerializableComparator<T> extends Comparator<T>, Serializable {
-
-        static <T> G021HW1.SerializableComparator<T> serialize(G021HW1.SerializableComparator<T> comparator) {
-            return comparator;
-        }
-
     }
 
 }
